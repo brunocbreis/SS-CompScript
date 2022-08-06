@@ -1,0 +1,25 @@
+from .classes import Screen
+from. resolve_api import Tool
+
+# self.screens:
+{
+    1: {
+        "screen": Screen, -> doesn't change, will have attributes that inform others recomputed after user interaction
+        "tools": set[Tool, Tool, Tool], -> don't change, but can have attributes set
+        "rectangle": int, -> the id of the canvas item, will be changed at every redraw
+    }
+}
+
+or... (i think this is worse)
+
+{
+    Screen: {
+        "id": 1,
+        "tools": set[Tool, Tool, Tool],
+        "rectangle": int,
+    }
+}
+
+
+# the name can be easily created by f stringing SSScreen and the key
+# the key creation starts at 1 and uses the find_missing method to see what media in i'm supposed to create
