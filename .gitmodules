@@ -1,0 +1,3 @@
+[submodule "ss_backend"]
+	path = ss_backend
+	url = https://github.com/brunocbreis/SplitScreener-Backend.git
