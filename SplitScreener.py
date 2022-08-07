@@ -1,8 +1,10 @@
 from __future__ import annotations
 import tkinter as tk
 import ss_backend as ss
-from ss_backend.resolve_api import ResolveAPI, ResolveFusionAPI
+from ss_backend.resolve_fusion_api import ResolveFusionAPI
+from ss_backend.protocols import ResolveAPI
 from ss_backend.export import render_fusion_output
+from ss_backend.style import fonts, colors
 import pyperclip
 
 
@@ -36,20 +38,19 @@ def get_event_coords_normalized(event) -> tuple[float, float]:
 
 
 def btn_on_hover(event: tk.Event, foreground):
-    event.widget.configure(foreground=foreground)
+    self: tk.Widget = event.widget
+    self.configure(foreground=foreground)
 
 
 def set_hover_style(button: tk.Label):
+    button.bind("<Enter>", lambda e: btn_on_hover(event=e, foreground=colors.TEXT))
     button.bind(
-        "<Enter>", lambda e: btn_on_hover(event=e, foreground=ColorPalette.TEXT)
-    )
-    button.bind(
-        "<Leave>", lambda e: btn_on_hover(event=e, foreground=ColorPalette.TEXT_DARKER)
+        "<Leave>", lambda e: btn_on_hover(event=e, foreground=colors.TEXT_DARKER)
     )
     button.bind("<Button-1>", lambda e: btn_on_hover(event=e, foreground="white"))
     button.bind(
         "<ButtonRelease-1>",
-        lambda e: btn_on_hover(event=e, foreground=ColorPalette.TEXT_DARKER),
+        lambda e: btn_on_hover(event=e, foreground=colors.TEXT_DARKER),
     )
 
 
@@ -183,8 +184,8 @@ class GridBlock:
 
 ###################         SCREEN SPLITTER         ####################
 class ScreenSplitter(tk.Canvas):
-    # Fusion Controller
-    controller: ResolveAPI = None
+    # Fusion API
+    api: ResolveAPI = None
 
     # Grid and Grid display
     ss_grid: ss.Grid = None
@@ -208,7 +209,7 @@ class ScreenSplitter(tk.Canvas):
 
     @classmethod
     def on_click(cls, event: tk.Event) -> None:
-        self = event.widget
+        self: tk.Canvas = event.widget
 
         item = self.find_closest(event.x, event.y)
         if self.itemcget(item, "fill") == cls.screen_color:
@@ -229,6 +230,8 @@ class ScreenSplitter(tk.Canvas):
     @classmethod
     def on_release(cls, event: tk.Event) -> None:
 
+        self: ScreenSplitter = event.widget
+
         if cls.new_screen_coords is None:
             return
         coords = get_event_coords_normalized(event)
@@ -238,7 +241,7 @@ class ScreenSplitter(tk.Canvas):
         if block is not None:
             index = block.grid_cell.index
             cls.new_screen_indexes = (cls.new_screen_indexes, index)
-            event.widget.create_screen()
+            self.create_screen()
             return
         cls.new_screen_indexes = None
 
@@ -254,7 +257,7 @@ class ScreenSplitter(tk.Canvas):
         )
 
         self.draw_screen(screen)
-        screen.merge, screen.mask, screen.media_in = self.controller.add_screen(
+        screen.merge, screen.mask, screen.media_in = self.api.add_screen(
             **screen.values
         )
 
@@ -312,14 +315,14 @@ class ScreenSplitter(tk.Canvas):
         mask.Delete()
         media_in.Delete()
 
-        self.controller.merges.remove(merge)
-        self.controller.masks.remove(mask)
-        self.controller.media_ins.remove(media_in)
-        self.controller.set_input_media_out()
+        self.api.merges.remove(merge)
+        self.api.masks.remove(mask)
+        self.api.media_ins.remove(media_in)
+        self.api.set_input_media_out()
 
         self.ss_grid.screens.remove(screen_to_delete)
         self.user_wants_to_delete = True
-        self.controller.update_flow_position()
+        self.api.update_flow_position()
 
     # SCREEN BATCH DELETION =================================
     def delete_all_screens(self, event):
@@ -327,15 +330,15 @@ class ScreenSplitter(tk.Canvas):
             return
         self.ss_grid.screens.clear()
         for merge, mask, media_in in zip(
-            self.controller.merges, self.controller.masks, self.controller.media_ins
+            self.api.merges, self.api.masks, self.api.media_ins
         ):
             merge.Delete()
             mask.Delete()
             media_in.Delete()
-        self.controller.masks.clear()
-        self.controller.merges.clear()
-        self.controller.media_ins.clear()
-        self.controller.media_out.SetInput("Input", self.controller.canvas)
+        self.api.masks.clear()
+        self.api.merges.clear()
+        self.api.media_ins.clear()
+        self.api.media_out.SetInput("Input", self.api.canvas)
 
     def pre_delete_all_screens(self, event):
         if self.ss_grid.screens is None:
@@ -374,9 +377,9 @@ class ScreenSplitter(tk.Canvas):
 
         # change labels
         self.entries["top"][0].configure(text="Margin")
-        self.entries["left"][0].configure(foreground=ColorPalette.TEXT_DARKER)
-        self.entries["bottom"][0].configure(foreground=ColorPalette.TEXT_DARKER)
-        self.entries["right"][0].configure(foreground=ColorPalette.TEXT_DARKER)
+        self.entries["left"][0].configure(foreground=colors.TEXT_DARKER)
+        self.entries["bottom"][0].configure(foreground=colors.TEXT_DARKER)
+        self.entries["right"][0].configure(foreground=colors.TEXT_DARKER)
 
         self.entries["top"][1].unbind("<Return>")
         self.entries["top"][1].unbind("<FocusOut>")
@@ -404,9 +407,9 @@ class ScreenSplitter(tk.Canvas):
 
         # change labels
         self.entries["top"][0].configure(text="Top")
-        self.entries["left"][0].configure(foreground=ColorPalette.TEXT)
-        self.entries["bottom"][0].configure(foreground=ColorPalette.TEXT)
-        self.entries["right"][0].configure(foreground=ColorPalette.TEXT)
+        self.entries["left"][0].configure(foreground=colors.TEXT)
+        self.entries["bottom"][0].configure(foreground=colors.TEXT)
+        self.entries["right"][0].configure(foreground=colors.TEXT)
 
         self.entries["top"][1].unbind("<Return>")
         self.entries["top"][1].unbind("<FocusOut>")
@@ -461,15 +464,13 @@ class ScreenSplitter(tk.Canvas):
 
         self.draw_canvas()
 
-        self.controller.set_inputs_canvas(
+        self.api.set_inputs_canvas(
             self.ss_grid.canvas.width, self.ss_grid.canvas.height
         )
 
         if self.ss_grid.screens:
             for screen in self.ss_grid.screens:
-                self.controller.set_inputs_screen(
-                    screen.merge, screen.mask, **screen.values
-                )
+                self.api.set_inputs_screen(screen.merge, screen.mask, **screen.values)
 
         GridBlock.create_all(self, self.ss_grid)
 
@@ -647,9 +648,7 @@ class ScreenSplitter(tk.Canvas):
 
         self.refresh_scale_text(canvas_width)
 
-        self.controller.add_canvas(
-            self.ss_grid.canvas.width, self.ss_grid.canvas.height
-        )
+        self.api.add_canvas(self.ss_grid.canvas.width, self.ss_grid.canvas.height)
 
     def refresh_scale_text(self, new_width: int) -> None:
         self.preview_scale = new_width / self.ss_grid.canvas.width
@@ -734,30 +733,6 @@ class RectTracker:
         self.item = None
 
 
-###################         STYLE PALETTES          ####################
-class ColorPalette:
-    # root
-    ROOT_BG = "#282828"
-    TEXT = "#D0D0D0"
-    TEXT_DARKER = "#A3A3A3"
-
-    # canvas
-    CANVAS_BG = "#141414"
-    CANVAS_BLOCK = "#282828"
-    CANVAS_BLOCK_HOVER = "#303030"
-    CANVAS_SCREEN = "#0070D4"
-    CANVAS_SCREEN_PRE_DELETE = "#193470"
-    CANVAS_SCREEN_HOVER = "#258BE6"
-
-    # entries
-    ENTRY_BG = "#1F1F1F"
-
-
-class FontPalette:
-    main = "TkDefaultFont"
-    small = "TkSmallCaptionFont 12"
-
-
 ##################################################################################
 #####################       SPLITSCREENER APP       ##############################
 ##################################################################################
@@ -781,20 +756,17 @@ def main():
     #####################       ROOT & SETUP      ####################################
     ##################################################################################
 
-    cp = ColorPalette()
-    fp = FontPalette()
-
     # root.iconbitmap(ip.app_icon)
 
     # ROOT CONFIGS =========================================================
-    root.configure(bg=cp.ROOT_BG)
-    root.option_add("*font", fp.main)
-    root.option_add("*foreground", cp.TEXT)
-    root.option_add("*Entry.foreground", cp.TEXT)
-    root.option_add("*Entry.background", cp.ENTRY_BG)
-    root.option_add("*Entry.disabledbackground", cp.TEXT_DARKER)
-    root.option_add("*background", cp.ROOT_BG)
-    root.option_add("*Checkbutton.font", fp.small)
+    root.configure(bg=colors.ROOT_BG)
+    root.option_add("*font", fonts.MAIN)
+    root.option_add("*foreground", colors.TEXT)
+    root.option_add("*Entry.foreground", colors.TEXT)
+    root.option_add("*Entry.background", colors.ENTRY_BG)
+    root.option_add("*Entry.disabledbackground", colors.TEXT_DARKER)
+    root.option_add("*background", colors.ROOT_BG)
+    root.option_add("*Checkbutton.font", fonts.SMALL)
     root.attributes("-topmost", True)
     # root.minsize(1260, 740)
     root.title("SplitScreener 1.0")
@@ -840,7 +812,7 @@ def main():
     ##################################################################################
     screen_splitter = ScreenSplitter(
         creator_frame,
-        background=cp.CANVAS_BG,
+        background=colors.CANVAS_BG,
         bd=0,
         highlightthickness=0,
         relief="ridge",
@@ -848,11 +820,11 @@ def main():
     ScreenSplitter.ss_grid = ss_grid
     ScreenSplitter.scale_var = tk.DoubleVar()
     ScreenSplitter.scale_text = tk.StringVar()
-    ScreenSplitter.screen_color: str = cp.CANVAS_SCREEN
-    ScreenSplitter.screen_color_pre_delete = cp.CANVAS_SCREEN_PRE_DELETE
-    ScreenSplitter.screen_color_hover = cp.CANVAS_SCREEN_HOVER
+    ScreenSplitter.screen_color: str = colors.CANVAS_SCREEN
+    ScreenSplitter.screen_color_pre_delete = colors.CANVAS_SCREEN_PRE_DELETE
+    ScreenSplitter.screen_color_hover = colors.CANVAS_SCREEN_HOVER
     ScreenSplitter.fusion_studio: tk.BooleanVar = tk.BooleanVar()
-    ScreenSplitter.controller = ResolveFusionAPI()
+    ScreenSplitter.api = ResolveFusionAPI()
 
     screen_splitter.draw_canvas()
 
@@ -863,11 +835,11 @@ def main():
     # SCALE LABEL ====================================================================
     scale_label = tk.Label(
         creator_frame,
-        font=fp.small,
+        font=fonts.SMALL,
         textvariable=screen_splitter.scale_text,
         justify=tk.RIGHT,
-        bg=cp.ROOT_BG,
-        foreground=cp.TEXT_DARKER,
+        bg=colors.ROOT_BG,
+        foreground=colors.TEXT_DARKER,
     )
 
     # instruction_label.grid( row=1,  sticky=tk.W)
@@ -878,17 +850,17 @@ def main():
     GridBlock.create_all(
         screen_splitter,
         ss_grid,
-        fill=cp.CANVAS_BLOCK,
-        activefill=cp.CANVAS_BLOCK_HOVER,
-        outline=cp.CANVAS_BLOCK,
-        activeoutline=cp.CANVAS_BLOCK,
+        fill=colors.CANVAS_BLOCK,
+        activefill=colors.CANVAS_BLOCK_HOVER,
+        outline=colors.CANVAS_BLOCK,
+        activeoutline=colors.CANVAS_BLOCK,
         activewidth=1,
     )
     GridBlock.draw_all()
 
     # SELECTION RECTANGLE ==============================================
     rect = RectTracker(screen_splitter)
-    rect.autodraw(fill="", width=0.5, outline=cp.TEXT_DARKER, dash=(4, 4))
+    rect.autodraw(fill="", width=0.5, outline=colors.TEXT_DARKER, dash=(4, 4))
 
     ##################################################################################
     ##################### BUTTON LEFT FRAME ##########################################
@@ -924,7 +896,7 @@ def main():
 
     # link button
 
-    link_margins = tk.Label(button_frame_left, text="🔗", foreground=cp.TEXT_DARKER)
+    link_margins = tk.Label(button_frame_left, text="🔗", foreground=colors.TEXT_DARKER)
     link_margins.grid(column=2, row=5, rowspan=2, sticky=tk.W, padx=4)
     set_hover_style(link_margins)
     link_margins.bind("<Button-1>", screen_splitter.link_margins, add="+")
@@ -939,7 +911,11 @@ def main():
             if key == "cols" or key == "rows":
                 new_key = f"# {key}"
             label = tk.Label(
-                parent, text=new_key.title(), bg=cp.ROOT_BG, justify=tk.LEFT, padx=20
+                parent,
+                text=new_key.title(),
+                bg=colors.ROOT_BG,
+                justify=tk.LEFT,
+                padx=20,
             )
 
             entry = tk.Entry(
@@ -947,14 +923,14 @@ def main():
                 width=8,
                 justify=tk.CENTER,
                 textvariable=var,
-                foreground=cp.TEXT,
+                foreground=colors.TEXT,
                 bd=0,
                 relief="flat",
-                bg=cp.ENTRY_BG,
+                bg=colors.ENTRY_BG,
                 highlightthickness=1,
-                highlightbackground=cp.CANVAS_BG,
-                highlightcolor=cp.CANVAS_BG,
-                disabledbackground=cp.CANVAS_BLOCK,
+                highlightbackground=colors.CANVAS_BG,
+                highlightcolor=colors.CANVAS_BG,
+                disabledbackground=colors.CANVAS_BLOCK,
             )
             var_entries[key] = (label, entry)
         return var_entries
@@ -969,13 +945,13 @@ def main():
             i += 1
 
         # adds spacers
-        tk.Label(button_frame_left, height=1, background=cp.ROOT_BG).grid(
+        tk.Label(button_frame_left, height=1, background=colors.ROOT_BG).grid(
             column=2, row=3, pady=3
         )
-        tk.Label(button_frame_left, height=1, background=cp.ROOT_BG).grid(
+        tk.Label(button_frame_left, height=1, background=colors.ROOT_BG).grid(
             column=2, row=9, pady=3
         )
-        tk.Label(button_frame_left, height=1, background=cp.ROOT_BG).grid(
+        tk.Label(button_frame_left, height=1, background=colors.ROOT_BG).grid(
             column=2, row=12, pady=3
         )
 
@@ -1086,7 +1062,7 @@ def main():
     button_frame_right.rowconfigure(index=4, weight=1)
     button_frame_right.rowconfigure(index=5, weight=1)
     button_frame_right.rowconfigure(index=6, weight=1)
-    button_frame_right.option_add("*font", fp.small)
+    button_frame_right.option_add("*font", fonts.SMALL)
 
     # Rotate Clockwise
     # # rotate_cw_img = [ImageTk.PhotoImage(file=ip.icn_rotate_cw[x]) for x in range(3)]
@@ -1117,7 +1093,7 @@ def main():
         button_frame_right,
         text="↕️ Flip Vertically",
         justify=tk.LEFT,
-        foreground=cp.TEXT_DARKER,
+        foreground=colors.TEXT_DARKER,
     )
 
     set_hover_style(flipv_text)
@@ -1131,7 +1107,7 @@ def main():
         button_frame_right,
         text="↔️ Flip Horizontally",
         justify=tk.LEFT,
-        foreground=cp.TEXT_DARKER,
+        foreground=colors.TEXT_DARKER,
     )
 
     set_hover_style(fliph_text)
@@ -1145,7 +1121,7 @@ def main():
         button_frame_right,
         text="🗑 Delete all Screens",
         justify=tk.LEFT,
-        foreground=cp.TEXT_DARKER,
+        foreground=colors.TEXT_DARKER,
     )
     set_hover_style(delete_text)
 
@@ -1170,7 +1146,7 @@ def main():
         footer,
         textvariable=screen_splitter.status_text,
         justify=tk.CENTER,
-        foreground=cp.TEXT_DARKER,
+        foreground=colors.TEXT_DARKER,
     )
 
     status_bar.pack(pady=15)
