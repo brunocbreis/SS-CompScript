@@ -31,7 +31,7 @@ def find_grid_block_within(
     )
 
 
-def get_event_coords_normalized(event) -> tuple[float, float]:
+def get_event_coords_normalized(event: tk.Event) -> tuple[float, float]:
     self: tk.Widget = event.widget
     coords = (event.x / self.winfo_width(), 1 - event.y / self.winfo_height())
     return coords
@@ -741,7 +741,7 @@ def main():
     root = tk.Tk()
 
     # LOADING SPLITSCREENER DEFAULTS =========================================
-    defaults = ss.defaults
+    defaults = ss.DEFAULTS
 
     # SPLITSCREENER INITIALIZERS ======================================
     ss_canvas = ss.Canvas((defaults["width"], defaults["height"]))
