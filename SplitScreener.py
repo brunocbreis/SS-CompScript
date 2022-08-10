@@ -1,8 +1,8 @@
 from __future__ import annotations
 import tkinter as tk
 import ss_backend as ss
-from ss_backend.resolve_fusion_api import ResolveFusionAPI
-from ss_backend.protocols import ResolveAPI
+from ss_backend.resolve_api import ResolveFusionAPI
+from ss_backend.resolve_api import ResolveAPI
 from ss_backend.export import render_fusion_output
 from ss_backend.style import fonts, colors
 import pyperclip
