@@ -4,3 +4,4 @@ test_command.py
 test_comprehension.py
 test_rectangle.py
 test_entry.py
+fake_fusion.py
