@@ -212,9 +212,9 @@ class ResolveFusionAPI:
         self.refresh_positions()
 
     def delete_all_screens(self) -> None:
-        self.delete_tool_batch(*self.masks)
-        self.delete_tool_batch(*self.merges)
         self.delete_tool_batch(*self.media_ins)
+        self.delete_tool_batch(*self.merges)
+        self.delete_tool_batch(*self.masks)
 
         self.masks.clear()
         self.merges.clear()
