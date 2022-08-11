@@ -1,7 +1,7 @@
 !["SplitScreener – Comp Script"](https://github.com/brunocbreis/SplitScreener/blob/master/imgs/ReadMeBanner_compscript.png)
 
 
- ![version: beta](https://img.shields.io/badge/version-beta-blue) ![works with DaVinci Resolve and Fusion Studio](https://img.shields.io/badge/works%20with-DaVinci%20Resolve%20%7C%20Fusion%20Studio-lightgrey)  [!["Buy Me A Coffee"](https://img.shields.io/badge/-buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/brunoreis)
+ ![version: beta](https://img.shields.io/badge/version-beta-blue) ![works with DaVinci Resolve 18 and Fusion Studio 18](https://img.shields.io/badge/works%20with-DaVinci%20Resolve%2018%20%7C%20Fusion%20Studio%2018%20-lightgrey)  [!["Buy Me A Coffee"](https://img.shields.io/badge/-buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/brunoreis)
   
 
 ## Click, drag, split!
