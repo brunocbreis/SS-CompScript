@@ -37,6 +37,8 @@ You can then use the following git command to clone the repo and install the lat
 
 `git clone --recurse-submodules https://github.com/brunocbreis/SS-CompScript/ ./SplitScreener`
 
+If you have previously cloned the repo, you can use `git pull --recurse-submodules` to fetch new changes.
+
 ### 🏃‍♂️ Running the script
 After installation, you're ready to *split some screens*! 🔪
 
