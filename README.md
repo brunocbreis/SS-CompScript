@@ -23,7 +23,7 @@ As you can see below, whenever you create a screen, the corresponding nodes in t
 ### ⚙️ How to install
 First, **open your Terminal application** and navigate to the `Comp` Scripts folder inside your **DaVinci Resolve** / **Fusion Studio** installation files directory. This is where all of your custom scripts can be placed for easy access from within the application, while you're in the Fusion page (or inside of Fusion Studio).
 
-#### 🗂 Finding the Comp Scripts file path in your system
+#### 🗂 Finding the Comp Scripts folder path in your system
 ##### 🪟 Windows
 DaVinci Resolve: `C:\ProgramData\Blackmagic Design\DaVinci Resolve\Fusion\Scripts\Comp`
 
