@@ -1,7 +1,9 @@
 import tkinter as tk
 from ss_backend.style import colors, fonts
-from ss_backend.core import Canvas, Margin, Grid
 from ss_backend import (
+    Canvas,
+    Margin,
+    Grid,
     DEFAULTS,
     ScreenSplitterGUI,
     Controller,
@@ -11,7 +13,7 @@ from ss_backend import (
 from ss_backend.fusion_alias import Comp, Fusion, Tool
 from ss_backend.utils import find_first_missing
 
-# FAKE FUSION FOR TESTING
+
 def initialize_fake_fusion():
     print("Initializing fake Fusion.")
     global fusion, comp
@@ -25,7 +27,8 @@ except NameError:
     initialize_fake_fusion()
 
 # GLOBAL
-IS_RESOLVE = True if fusion.GetResolve() else False
+# IS_RESOLVE = True if fusion.GetResolve() else False
+IS_RESOLVE = False
 
 
 class App:
@@ -90,7 +93,7 @@ class App:
 
     def initialize_user_interface(self):
         # Resolve API
-        self.api = ResolveFusionAPI()
+        self.api = ResolveFusionAPI() if IS_RESOLVE else FusionStudioAPI()
         self.api.add_canvas(*self.grid.canvas.resolution)
 
         # Screen Creation UI
@@ -128,10 +131,7 @@ class App:
         self.interface.make_transformation_buttons(frame)
 
     def run(self):
-        try:
-            self.root.mainloop()
-        except NameError:
-            raise Exception("Please initialize a root tk window first.")
+        self.root.mainloop()
 
 
 class ResolveFusionAPI:
@@ -139,7 +139,7 @@ class ResolveFusionAPI:
         self.merges: list[Tool] = []
         self.masks: list[Tool] = []
         self.media_ins: list[Tool] = []
-        self.screens: list[set[Tool, Tool, Tool]] = []
+        self.screens: list[tuple[Tool, Tool, Tool]] = []
 
     # PROTOCOL METHODS  =======================================================
     def refresh_global(
@@ -293,6 +293,74 @@ class ResolveFusionAPI:
         return find_first_missing(
             sorted([int(media_in.GetInput("Layer")) for media_in in self.media_ins])
         )
+
+
+class FusionStudioAPI(ResolveFusionAPI):
+    """Simplified version of Resolve API to exclude MediaIns and MediaOut"""
+
+    def __init__(self) -> None:
+        self.merges: list[Tool] = []
+        self.masks: list[Tool] = []
+        self.screens: list[tuple[Tool, Tool]] = []
+
+    def add_canvas(self, width: int, height: int):
+        canvas = comp.AddTool("Background", 0, 0)
+        canvas.SetAttrs({"TOOLS_Name": "SSCanvas"})
+        canvas.SetInput("UseFrameFormatSettings", 0)
+
+        self.canvas = canvas
+        self.set_inputs_canvas(width, height)
+
+    def refresh_positions(self):
+        flow = comp.CurrentFrame.FlowView
+        flow.QueueSetPos(self.canvas, 0, 0)
+        if self.merges:
+            for index, merge in enumerate(self.merges):
+                flow.QueueSetPos(merge, 0, index + 1)
+            for index, mask in enumerate(self.masks):
+                flow.QueueSetPos(mask, 1, index + 1)
+        else:
+            index = 0
+
+        flow.FlushSetPosQueue()
+
+    def add_screen(self, **kwargs) -> tuple[Tool, Tool]:
+        node_y = len(self.merges) + 1
+
+        merge = comp.AddTool("Merge", 0, node_y)
+        mask = comp.AddTool("RectangleMask", 1, node_y)
+
+        mask_inps = {key: kwargs[key] for key in ("Width", "Height", "Center")}
+        mrg_inps = {key: kwargs[key] for key in ("Center", "Size")}
+
+        mrg_inps["EffectMask"] = mask
+        if self.merges:
+            mrg_inps["Background"] = self.merges[-1]
+        else:
+            mrg_inps["Background"] = self.canvas
+
+        self.set_inputs(merge, **mrg_inps)
+        self.set_inputs(mask, **mask_inps)
+
+        self.merges.append(merge)
+        self.masks.append(mask)
+
+        return merge, mask
+
+    def delete_screen(self, screen: list[Tool, Tool]) -> None:
+        self.delete_tool_batch(*screen)
+
+        self.merges.remove(screen[0])
+        self.masks.remove(screen[1])
+
+        self.refresh_positions()
+
+    def delete_all_screens(self) -> None:
+        self.delete_tool_batch(*self.merges)
+        self.delete_tool_batch(*self.masks)
+
+        self.masks.clear()
+        self.merges.clear()
 
 
 def main():
