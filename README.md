@@ -7,7 +7,7 @@
 ## Click, drag, split!
 It's never been easier to create beautiful, consistent, and customizable split screen designs in DaVinci Resolve.
 
-With SplitScreener's intuitive interface, anyone can build their own custom grid layout with the classic columns, rows, magins and gutter structure. From there, you just draw however many screens you want and they're automatically placed on your grid, while a node tree is dynamically generated as you design your SplitScreen. No Fusion knowledge required! **Seriously, none at all.**
+With SplitScreener's intuitive interface, anyone can build their own custom grid layout with the classic columns, rows, margins and gutter structure. From there, you just draw however many screens you want and they're automatically placed on your grid, while a node tree is dynamically generated as you design your SplitScreen. No Fusion knowledge required! **Seriously, none at all.**
 
 ### 🏋️ How it works
 ...
