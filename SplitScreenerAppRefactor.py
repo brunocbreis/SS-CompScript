@@ -27,8 +27,7 @@ except NameError:
     initialize_fake_fusion()
 
 # GLOBAL
-# IS_RESOLVE = True if fusion.GetResolve() else False
-IS_RESOLVE = False
+IS_RESOLVE = True if fusion.GetResolve() else False
 
 
 class App:
@@ -311,6 +310,8 @@ class FusionStudioAPI(ResolveFusionAPI):
         self.canvas = canvas
         self.set_inputs_canvas(width, height)
 
+        comp.CurrentFrame.ViewOn(canvas, 2)
+
     def refresh_positions(self):
         flow = comp.CurrentFrame.FlowView
         flow.QueueSetPos(self.canvas, 0, 0)
@@ -345,6 +346,8 @@ class FusionStudioAPI(ResolveFusionAPI):
         self.merges.append(merge)
         self.masks.append(mask)
 
+        comp.CurrentFrame.ViewOn(merge, 2)
+
         return merge, mask
 
     def delete_screen(self, screen: list[Tool, Tool]) -> None:
@@ -355,12 +358,16 @@ class FusionStudioAPI(ResolveFusionAPI):
 
         self.refresh_positions()
 
+        comp.CurrentFrame.ViewOn(self.merges[-1], 2)
+
     def delete_all_screens(self) -> None:
         self.delete_tool_batch(*self.merges)
         self.delete_tool_batch(*self.masks)
 
         self.masks.clear()
         self.merges.clear()
+
+        comp.CurrentFrame.ViewOn(self.canvas, 2)
 
 
 def main():
