@@ -358,7 +358,10 @@ class FusionStudioAPI(ResolveFusionAPI):
 
         self.refresh_positions()
 
-        comp.CurrentFrame.ViewOn(self.merges[-1], 2)
+        if self.merges:
+            comp.CurrentFrame.ViewOn(self.merges[-1], 2)
+        else:
+            comp.CurrentFrame.ViewOn(self.canvas, 2)
 
     def delete_all_screens(self) -> None:
         self.delete_tool_batch(*self.merges)
