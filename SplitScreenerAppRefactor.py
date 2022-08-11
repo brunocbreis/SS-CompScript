@@ -39,7 +39,7 @@ class App:
         # Window config
         root.attributes("-topmost", True)
         root.resizable(False, False)
-        root.title("SplitScreener")
+        root.title("SplitScreener (beta)")
 
         # Bg config
         root.configure(bg=colors.ROOT_BG)
@@ -64,11 +64,11 @@ class App:
         root.rowconfigure(index=4, weight=3)  # FOOTER
 
         # Creates and places frames for UI Widgets ============================
-        self.header = tk.Frame(root)
+        self.header = tk.Frame(root, height=40)
         self.frame_left_entries = tk.Frame(root)
         self.frame_screen_creation = tk.Frame(root)
         self.frame_right_transformations = tk.Frame(root)
-        self.footer = tk.Frame(root)
+        self.footer = tk.Frame(root, height=40)
 
         # Adding to grid...
         self.header.grid(column=1, row=1, columnspan=3)
